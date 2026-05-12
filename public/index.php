@@ -1,13 +1,10 @@
 <?php
 
-// Simple Gold Price Scraper (No Framework)
-// Source: https://msgold.com.my/
-
 date_default_timezone_set('Asia/Kuala_Lumpur');
 
 $url = "https://msgold.com.my/";
 
-// Fetch website content
+// Fetch website
 $ch = curl_init();
 
 curl_setopt_array($ch, [
@@ -16,13 +13,13 @@ curl_setopt_array($ch, [
     CURLOPT_FOLLOWLOCATION => true,
     CURLOPT_SSL_VERIFYPEER => false,
     CURLOPT_SSL_VERIFYHOST => false,
-    CURLOPT_USERAGENT => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0 Safari/537.36',
+    CURLOPT_USERAGENT => 'Mozilla/5.0',
     CURLOPT_TIMEOUT => 30,
 ]);
 
 $html = curl_exec($ch);
 
-if (curl_errno($ch)) {
+if(curl_errno($ch)){
     die("cURL Error: " . curl_error($ch));
 }
 
@@ -38,32 +35,21 @@ libxml_clear_errors();
 
 $xpath = new DOMXPath($dom);
 
-// Find all rows
-$rows = $xpath->query("//tr");
+// SCRAPE ONLY spn9
+$buyNode = $xpath->query("//*[@id='spn9']")->item(0);
+
+// SCRAPE ONLY spn10
+$sellNode = $xpath->query("//*[@id='spn10']")->item(0);
 
 $gold999Buy = null;
 $gold999Sell = null;
 
-foreach ($rows as $row) {
+if ($buyNode) {
+    $gold999Buy = trim($buyNode->textContent);
+}
 
-    $text = trim($row->textContent);
-
-    // Find row containing 999.9 Gold
-    if (strpos($text, '999.9 Gold') !== false) {
-
-        $tds = $row->getElementsByTagName('td');
-
-        if ($tds->length >= 3) {
-
-            // Buy Price
-            $gold999Buy = trim($tds->item(1)->textContent);
-
-            // Sell Price
-            $gold999Sell = trim($tds->item(2)->textContent);
-        }
-
-        break;
-    }
+if ($sellNode) {
+    $gold999Sell = trim($sellNode->textContent);
 }
 
 ?>
@@ -73,7 +59,6 @@ foreach ($rows as $row) {
 <head>
     <title>Live Gold Price</title>
 
-    <!-- Auto Refresh Every 30 Seconds -->
     <meta http-equiv="refresh" content="30">
 
     <style>
